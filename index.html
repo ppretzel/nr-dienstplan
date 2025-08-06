@@ -301,13 +301,6 @@
     <div class="container">
         <div class="header">
             <h1>📅 Neuroradio-Dienstplan</h1>
-            <div class="instructions">
-                <ol>
-                    <li>Monat und Jahr auswählen</li>
-                    <li>Dienste für gewünschte Tage eintragen ("Mo-Fr" für ganze Wochen, "MRT2 wechseln" für Wechselschichten)</li>
-                    <li>ICS-Datei herunterladen und in den Kalender importieren</li>
-                </ol>
-            </div>
         </div>
         
         <div class="content">
@@ -333,7 +326,7 @@
             <div id="calendarContainer"></div>
             
             <button onclick="generateICS()" class="generate-btn" id="generateBtn" style="display: none;">
-                📥 ICS-Datei herunterladen
+                📥 ICS-Datei erstellen
             </button>
         </div>
     </div>
@@ -487,12 +480,11 @@
         }
 
         function createDayCard(date, targetMonth, targetYear, weekNumber) {
-            const isCurrentMonth = date.getMonth() === targetMonth && date.getFullYear() === targetYear;
             const weekday = WEEKDAYS[date.getDay()];
             const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             
             const dayCard = document.createElement('div');
-            dayCard.className = `day-card ${!isCurrentMonth ? 'other-month' : ''}`;
+            dayCard.className = `day-card`;
             
             // Alle Tage sollen Dienste auswählen können, auch wenn sie nicht im aktuellen Monat sind
             dayCard.innerHTML = `
@@ -541,7 +533,7 @@
 
         function fillWeek(weekNumber, button) {
             const weekContainer = document.getElementById(`week-${weekNumber}`);
-            const dayCards = weekContainer.querySelectorAll('.day-card:not(.other-month)');
+            const dayCards = weekContainer.querySelectorAll('.day-card');
             
             // Finde den ausgewählten Dienst in dieser Woche
             let selectedService = '';
