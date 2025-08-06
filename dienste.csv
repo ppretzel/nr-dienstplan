@@ -1,0 +1,7 @@
+key,name,startTime,endTime,color
+frei,Frei,,,#28a745
+frueh,Frühdienst,06:00,14:00,#ffc107
+spaet,Spätdienst,14:00,22:00,#fd7e14
+nacht,Nachtdienst,22:00,06:00,#6f42c1
+tag,Tagdienst,08:00,16:00,#007bff
+bereit,Bereitschaftsdienst,08:00,08:00,#dc3545

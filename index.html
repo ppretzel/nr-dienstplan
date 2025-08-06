@@ -9,6 +9,56 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        function fillMRT2Week(weekNumber, button) {
+            const weekContainer = document.getElementById(`week-${weekNumber}`);
+            const dayCards = weekContainer.querySelectorAll('.day-card');
+            
+            // Prüfen ob MRT2-Dienste existieren
+            if (!SERVICES['mrt2_frueh'] || !SERVICES['mrt2_spaet']) {
+                alert('MRT2-Dienste (mrt2_frueh und mrt2_spaet) sind in der dienste.csv nicht definiert.');
+                return;
+            }
+            
+            // Finde den ersten MRT2-Dienst in dieser Woche um zu bestimmen, womit gestartet werden soll
+            let startWithFrueh = true; // Standard: mit Früh starten
+            
+            dayCards.forEach((card, index) => {
+                if (index >= 0 && index <= 4) { // Nur Mo-Fr
+                    const select = card.querySelector('.day-select');
+                    if (select && (select.value === 'mrt2_frueh' || select.value === 'mrt2_spaet')) {
+                        // Wenn bereits ein MRT2-Dienst ausgewählt ist, bestimme das Muster
+                        if (select.value === 'mrt2_spaet') {
+                            // Wenn wir bei einem Spätdienst sind, schauen wir ob es Montag ist
+                            startWithFrueh = (index % 2 === 0); // Gerade Tage (Mo, Mi, Fr) = Früh bei Start mit Früh
+                        } else {
+                            startWithFrueh = (index % 2 !== 0); // Ungerade Tage (Di, Do) = Spät bei Start mit Früh
+                        }
+                    }
+                }
+            });
+            
+            // Wechselschicht Mo-Fr eintragen
+            dayCards.forEach((card, index) => {
+                if (index >= 0 && index <= 4) { // Montag bis Freitag
+                    const select = card.querySelector('.day-select');
+                    if (select) {
+                        let serviceKey;
+                        if (startWithFrueh) {
+                            // Start mit Früh: Mo=Früh, Di=Spät, Mi=Früh, Do=Spät, Fr=Früh
+                            serviceKey = (index % 2 === 0) ? 'mrt2_frueh' : 'mrt2_spaet';
+                        } else {
+                            // Start mit Spät: Mo=Spät, Di=Früh, Mi=Spät, Do=Früh, Fr=Spät
+                            serviceKey = (index % 2 === 0) ? 'mrt2_spaet' : 'mrt2_frueh';
+                        }
+                        
+                        select.value = serviceKey;
+                        
+                        // Schedule aktualisieren
+                        const dateKey = select.onchange.toString().match(/'([^']+)'/)[1];
+                        currentSchedule[dateKey] = serviceKey;
+                    }
+                }
+            });
         }
         
         body {
@@ -30,28 +80,38 @@
         .header {
             background: #2c3e50;
             color: white;
-            padding: 30px;
-            text-align: center;
+            padding: 15px 20px;
         }
         
         .header h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            text-align: center;
         }
         
-        .header p {
+        .instructions {
+            font-size: 0.9rem;
             opacity: 0.9;
-            font-size: 1.1rem;
+            line-height: 1.4;
+        }
+        
+        .instructions ol {
+            margin: 0;
+            padding-left: 18px;
+        }
+        
+        .instructions li {
+            margin-bottom: 2px;
         }
         
         .content {
-            padding: 30px;
+            padding: 15px;
         }
         
         .controls {
             display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 15px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: end;
         }
@@ -59,19 +119,20 @@
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 5px;
         }
         
         label {
             font-weight: 600;
             color: #2c3e50;
+            font-size: 0.9rem;
         }
         
         select, input, button {
-            padding: 12px;
+            padding: 8px;
             border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
             transition: all 0.3s ease;
         }
         
@@ -83,8 +144,8 @@
         
         .week-container {
             background: white;
-            border-radius: 8px;
-            margin-bottom: 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
             border: 2px solid #e1e8ed;
             overflow: hidden;
         }
@@ -92,9 +153,9 @@
         .week-header {
             background: #667eea;
             color: white;
-            padding: 8px 15px;
+            padding: 6px 12px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
         
         .week-days {
@@ -104,8 +165,8 @@
         
         .day-card {
             border-right: 1px solid #e1e8ed;
-            padding: 10px;
-            min-height: 80px;
+            padding: 8px;
+            min-height: 65px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -117,27 +178,27 @@
         }
         
         .day-card.other-month {
-            background: #f0f0f0;
-            opacity: 0.5;
+            background: #f8f8f8;
+            opacity: 0.7;
         }
         
         .day-header {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .day-date {
             font-weight: 700;
             color: #2c3e50;
-            font-size: 1.2rem;
+            font-size: 1rem;
             line-height: 1;
         }
         
         .day-name {
             color: #6c757d;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -145,10 +206,10 @@
         
         .day-select {
             width: 100%;
-            padding: 4px;
-            font-size: 0.8rem;
+            padding: 3px;
+            font-size: 0.75rem;
             border: 1px solid #dee2e6;
-            border-radius: 4px;
+            border-radius: 3px;
         }
         
         .day-select:focus {
@@ -156,17 +217,27 @@
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
         }
         
+        .week-buttons {
+            display: flex;
+            gap: 2px;
+            margin-top: 3px;
+        }
+        
         .fill-week-btn {
             background: #28a745;
             color: white;
             border: none;
-            padding: 2px 6px;
-            font-size: 0.7rem;
-            border-radius: 3px;
+            padding: 1px 3px;
+            font-size: 0.55rem;
+            border-radius: 2px;
             cursor: pointer;
-            margin-top: 4px;
             opacity: 0;
             transition: opacity 0.2s;
+            flex: 1;
+        }
+        
+        .mrt2-btn {
+            background: #007bff;
         }
         
         .day-card:hover .fill-week-btn {
@@ -177,18 +248,22 @@
             background: #218838;
         }
         
+        .mrt2-btn:hover {
+            background: #0056b3;
+        }
+        
         .generate-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 1.1rem;
+            padding: 12px 25px;
+            font-size: 1rem;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             transition: transform 0.2s ease;
             display: block;
-            margin: 0 auto;
+            margin: 15px auto 0;
         }
         
         .generate-btn:hover {
@@ -259,14 +334,14 @@
                 border-bottom: none;
             }
             
+            .content {
+                padding: 12px;
+            }
+            
             .day-header {
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
-            }
-            
-            .content {
-                padding: 20px;
             }
         }
     </style>
@@ -274,8 +349,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📅 Dienstplan Generator</h1>
-            <p>Erstellen Sie aus Ihrem Dienstplan automatisch eine ICS-Kalenderdatei</p>
+            <h1>📅 Neuroradio-Dienstplan</h1>
+            <div class="instructions">
+                <ol>
+                    <li>Monat und Jahr auswählen</li>
+                    <li>Dienste für gewünschte Tage eintragen ("Mo-Fr" für ganze Wochen, "MRT2 wechseln" für Wechselschichten)</li>
+                    <li>ICS-Datei herunterladen und in den Kalender importieren</li>
+                </ol>
+            </div>
         </div>
         
         <div class="content">
@@ -311,15 +392,9 @@
     </div>
 
     <script>
-        // Dienst-Konfiguration - hier können Sie Ihre eigenen Dienste definieren
-        const SERVICES = {
-            'frei': { name: 'Frei', startTime: null, endTime: null, color: '#28a745' },
-            'frueh': { name: 'Frühdienst', startTime: '06:00', endTime: '14:00', color: '#ffc107' },
-            'spaet': { name: 'Spätdienst', startTime: '14:00', endTime: '22:00', color: '#fd7e14' },
-            'nacht': { name: 'Nachtdienst', startTime: '22:00', endTime: '06:00', color: '#6f42c1' },
-            'tag': { name: 'Tagdienst', startTime: '08:00', endTime: '16:00', color: '#007bff' },
-            'bereit': { name: 'Bereitschaftsdienst', startTime: '08:00', endTime: '08:00', color: '#dc3545' }
-        };
+        // Services werden aus CSV-Datei geladen
+        let SERVICES = {};
+        let servicesLoaded = false;
 
         const MONTHS = [
             'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -330,8 +405,60 @@
 
         let currentSchedule = {};
 
+        // CSV-Datei laden
+        async function loadServices() {
+            try {
+                const response = await fetch('dienste.csv');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const csvText = await response.text();
+                parseServicesCSV(csvText);
+                servicesLoaded = true;
+            } catch (error) {
+                console.error('Fehler beim Laden der dienste.csv:', error);
+                // Fallback zu Standard-Diensten
+                SERVICES = {
+                    'frei': { name: 'Frei', startTime: null, endTime: null, color: '#28a745' },
+                    'frueh': { name: 'Frühdienst', startTime: '06:00', endTime: '14:00', color: '#ffc107' },
+                    'spaet': { name: 'Spätdienst', startTime: '14:00', endTime: '22:00', color: '#fd7e14' },
+                    'nacht': { name: 'Nachtdienst', startTime: '22:00', endTime: '06:00', color: '#6f42c1' },
+                    'tag': { name: 'Tagdienst', startTime: '08:00', endTime: '16:00', color: '#007bff' },
+                    'bereit': { name: 'Bereitschaftsdienst', startTime: '08:00', endTime: '08:00', color: '#dc3545' }
+                };
+                servicesLoaded = true;
+                alert('Dienste-CSV konnte nicht geladen werden. Standard-Dienste werden verwendet.');
+            }
+        }
+
+        function parseServicesCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const header = lines[0].split(',').map(h => h.trim());
+            
+            SERVICES = {};
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                if (values.length >= 4) {
+                    const key = values[0];
+                    const name = values[1];
+                    const startTime = values[2] || null;
+                    const endTime = values[3] || null;
+                    const color = values[4] || '#007bff';
+                    
+                    SERVICES[key] = {
+                        name: name,
+                        startTime: startTime === '' ? null : startTime,
+                        endTime: endTime === '' ? null : endTime,
+                        color: color
+                    };
+                }
+            }
+        }
+
         // Initialisierung
-        function init() {
+        async function init() {
+            await loadServices();
             populateMonthSelect();
             populateYearSelect();
             // Kalender automatisch für aktuellen Monat anzeigen
@@ -379,7 +506,7 @@
             const monthSelect = document.getElementById('monthSelect');
             const yearSelect = document.getElementById('yearSelect');
             
-            if (!monthSelect.value) {
+            if (!monthSelect.value || !servicesLoaded) {
                 document.getElementById('calendarContainer').innerHTML = '';
                 document.getElementById('generateBtn').style.display = 'none';
                 return;
@@ -457,20 +584,22 @@
             const dayCard = document.createElement('div');
             dayCard.className = `day-card ${!isCurrentMonth ? 'other-month' : ''}`;
             
+            // Alle Tage sollen Dienste auswählen können, auch wenn sie nicht im aktuellen Monat sind
             dayCard.innerHTML = `
                 <div class="day-header">
                     <div class="day-date">${date.getDate()}</div>
                     <div class="day-name">${weekday}</div>
                 </div>
-                ${isCurrentMonth ? `
-                    <select class="day-select" onchange="updateSchedule('${dateKey}', this.value, ${weekNumber})">
-                        <option value="">-- Dienst --</option>
-                        ${Object.entries(SERVICES).map(([key, service]) => 
-                            `<option value="${key}">${service.name}</option>`
-                        ).join('')}
-                    </select>
-                    <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, this)" title="Gleichen Dienst für Mo-Fr eintragen">Mo-Fr füllen</button>
-                ` : ''}
+                <select class="day-select" onchange="updateSchedule('${dateKey}', this.value, ${weekNumber})">
+                    <option value="">-- Dienst --</option>
+                    ${Object.entries(SERVICES).map(([key, service]) => 
+                        `<option value="${key}">${service.name}</option>`
+                    ).join('')}
+                </select>
+                <div class="week-buttons">
+                    <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, this)" title="Gleichen Dienst für Mo-Fr eintragen">Mo-Fr</button>
+                    <button class="fill-week-btn mrt2-btn" onclick="fillMRT2Week(${weekNumber}, this)" title="MRT2 Wechselschicht Mo-Fr">MRT2 wechseln</button>
+                </div>
             `;
             
             return dayCard;
@@ -528,7 +657,7 @@
         }
 
         function generateICS() {
-            const name = document.getElementById('nameInput').value || 'Dienstplan';
+            const name = 'Dienstplan'; // Fester Name, da Eingabefeld entfernt
             const entries = Object.entries(currentSchedule).filter(([date, service]) => service && SERVICES[service].startTime);
             
             if (entries.length === 0) {
