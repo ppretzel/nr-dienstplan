@@ -9,56 +9,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        function fillMRT2Week(weekNumber, button) {
-            const weekContainer = document.getElementById(`week-${weekNumber}`);
-            const dayCards = weekContainer.querySelectorAll('.day-card');
-            
-            // Prüfen ob MRT2-Dienste existieren
-            if (!SERVICES['mrt2_frueh'] || !SERVICES['mrt2_spaet']) {
-                alert('MRT2-Dienste (mrt2_frueh und mrt2_spaet) sind in der dienste.csv nicht definiert.');
-                return;
-            }
-            
-            // Finde den ersten MRT2-Dienst in dieser Woche um zu bestimmen, womit gestartet werden soll
-            let startWithFrueh = true; // Standard: mit Früh starten
-            
-            dayCards.forEach((card, index) => {
-                if (index >= 0 && index <= 4) { // Nur Mo-Fr
-                    const select = card.querySelector('.day-select');
-                    if (select && (select.value === 'mrt2_frueh' || select.value === 'mrt2_spaet')) {
-                        // Wenn bereits ein MRT2-Dienst ausgewählt ist, bestimme das Muster
-                        if (select.value === 'mrt2_spaet') {
-                            // Wenn wir bei einem Spätdienst sind, schauen wir ob es Montag ist
-                            startWithFrueh = (index % 2 === 0); // Gerade Tage (Mo, Mi, Fr) = Früh bei Start mit Früh
-                        } else {
-                            startWithFrueh = (index % 2 !== 0); // Ungerade Tage (Di, Do) = Spät bei Start mit Früh
-                        }
-                    }
-                }
-            });
-            
-            // Wechselschicht Mo-Fr eintragen
-            dayCards.forEach((card, index) => {
-                if (index >= 0 && index <= 4) { // Montag bis Freitag
-                    const select = card.querySelector('.day-select');
-                    if (select) {
-                        let serviceKey;
-                        if (startWithFrueh) {
-                            // Start mit Früh: Mo=Früh, Di=Spät, Mi=Früh, Do=Spät, Fr=Früh
-                            serviceKey = (index % 2 === 0) ? 'mrt2_frueh' : 'mrt2_spaet';
-                        } else {
-                            // Start mit Spät: Mo=Spät, Di=Früh, Mi=Spät, Do=Früh, Fr=Spät
-                            serviceKey = (index % 2 === 0) ? 'mrt2_spaet' : 'mrt2_frueh';
-                        }
-                        
-                        select.value = serviceKey;
-                        
-                        // Schedule aktualisieren
-                        const dateKey = select.onchange.toString().match(/'([^']+)'/)[1];
-                        currentSchedule[dateKey] = serviceKey;
-                    }
-                }
-            });
+
         }
         
         body {
@@ -375,10 +326,6 @@
                     <select id="yearSelect"></select>
                 </div>
                 
-                <div class="form-group">
-                    <label for="nameInput">Ihr Name (für Kalendereinträge):</label>
-                    <input type="text" id="nameInput" placeholder="Max Mustermann" value="Dienstplan">
-                </div>
                 
 
             </div>
@@ -392,9 +339,18 @@
     </div>
 
     <script>
-        // Services werden aus CSV-Datei geladen
-        let SERVICES = {};
-        let servicesLoaded = false;
+        // Dienst-Konfiguration für Neuroradiologie
+        const SERVICES = {
+            'mrt1_frueh': { name: 'MRT1 Früh', startTime: '06:00', endTime: '14:00', color: '#ffc107' },
+            'mrt1_spaet': { name: 'MRT1 Spät', startTime: '14:00', endTime: '22:00', color: '#fd7e14' },
+            'mrt2_frueh': { name: 'MRT2 Früh', startTime: '06:00', endTime: '14:00', color: '#17a2b8' },
+            'mrt2_spaet': { name: 'MRT2 Spät', startTime: '14:00', endTime: '22:00', color: '#138496' },
+            'ct_frueh': { name: 'CT Früh', startTime: '06:00', endTime: '14:00', color: '#6f42c1' },
+            'ct_spaet': { name: 'CT Spät', startTime: '14:00', endTime: '22:00', color: '#5a359a' },
+            'intervention': { name: 'Intervention', startTime: '08:00', endTime: '16:00', color: '#dc3545' }
+        };
+
+        let servicesLoaded = true; // Services sind jetzt direkt verfügbar
 
         const MONTHS = [
             'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -405,67 +361,15 @@
 
         let currentSchedule = {};
 
-        // CSV-Datei laden
-        async function loadServices() {
-            try {
-                const response = await fetch('dienste.csv');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const csvText = await response.text();
-                parseServicesCSV(csvText);
-                servicesLoaded = true;
-            } catch (error) {
-                console.error('Fehler beim Laden der dienste.csv:', error);
-                // Fallback zu Standard-Diensten
-                SERVICES = {
-                    'frei': { name: 'Frei', startTime: null, endTime: null, color: '#28a745' },
-                    'frueh': { name: 'Frühdienst', startTime: '06:00', endTime: '14:00', color: '#ffc107' },
-                    'spaet': { name: 'Spätdienst', startTime: '14:00', endTime: '22:00', color: '#fd7e14' },
-                    'nacht': { name: 'Nachtdienst', startTime: '22:00', endTime: '06:00', color: '#6f42c1' },
-                    'tag': { name: 'Tagdienst', startTime: '08:00', endTime: '16:00', color: '#007bff' },
-                    'bereit': { name: 'Bereitschaftsdienst', startTime: '08:00', endTime: '08:00', color: '#dc3545' }
-                };
-                servicesLoaded = true;
-                alert('Dienste-CSV konnte nicht geladen werden. Standard-Dienste werden verwendet.');
-            }
-        }
-
-        function parseServicesCSV(csvText) {
-            const lines = csvText.trim().split('\n');
-            const header = lines[0].split(',').map(h => h.trim());
-            
-            SERVICES = {};
-            
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',').map(v => v.trim());
-                if (values.length >= 4) {
-                    const key = values[0];
-                    const name = values[1];
-                    const startTime = values[2] || null;
-                    const endTime = values[3] || null;
-                    const color = values[4] || '#007bff';
-                    
-                    SERVICES[key] = {
-                        name: name,
-                        startTime: startTime === '' ? null : startTime,
-                        endTime: endTime === '' ? null : endTime,
-                        color: color
-                    };
-                }
-            }
-        }
-
         // Initialisierung
-        async function init() {
-            await loadServices();
+        function init() {
+            // Erst Monat, dann Jahr,
+            // für den Fall das der vorausgewählte Monat im nächsten Jahr liegt
             populateMonthSelect();
             populateYearSelect();
             // Kalender automatisch für aktuellen Monat anzeigen
             generateCalendar();
         }
-
-
 
         function populateMonthSelect() {
             const select = document.getElementById('monthSelect');
@@ -481,21 +385,27 @@
             // Event Listener hinzufügen
             select.addEventListener('change', generateCalendar);
             
-            // Aktueller Monat vorauswählen
-            const currentMonth = new Date().getMonth();
-            select.value = currentMonth;
+            // Übernächsten Monat vorauswählen
+            const defaultMonth = new Date().getMonth()+2%12;
+            select.value = defaultMonth;
         }
 
         function populateYearSelect() {
             const select = document.getElementById('yearSelect');
             const currentYear = new Date().getFullYear();
             
-            for (let year = currentYear - 1; year <= currentYear + 2; year++) {
+            for (let year = currentYear; year <= currentYear + 1; year++) {
                 const option = document.createElement('option');
                 option.value = year;
                 option.textContent = year;
-                if (year === currentYear) option.selected = true;
                 select.appendChild(option);
+                // Start-Jahr setzen, ggf nächstes Jahr falls der Monat überspringt
+                const selectedMonth = document.getElementById('monthSelect').value;
+                if (selectedMonth < new Date().getMonth()) {
+                    select.value = currentYear + 1;
+                } else {
+                    select.value = currentYear;
+                }
             }
             
             // Event Listener hinzufügen
@@ -506,7 +416,7 @@
             const monthSelect = document.getElementById('monthSelect');
             const yearSelect = document.getElementById('yearSelect');
             
-            if (!monthSelect.value || !servicesLoaded) {
+            if (!monthSelect.value) {
                 document.getElementById('calendarContainer').innerHTML = '';
                 document.getElementById('generateBtn').style.display = 'none';
                 return;
@@ -591,16 +501,24 @@
                     <div class="day-name">${weekday}</div>
                 </div>
                 <select class="day-select" onchange="updateSchedule('${dateKey}', this.value, ${weekNumber})">
-                    <option value="">-- Dienst --</option>
+                    <option value=""></option>
                     ${Object.entries(SERVICES).map(([key, service]) => 
                         `<option value="${key}">${service.name}</option>`
                     ).join('')}
                 </select>
-                <div class="week-buttons">
-                    <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, this)" title="Gleichen Dienst für Mo-Fr eintragen">Mo-Fr</button>
-                    <button class="fill-week-btn mrt2-btn" onclick="fillMRT2Week(${weekNumber}, this)" title="MRT2 Wechselschicht Mo-Fr">MRT2 wechseln</button>
-                </div>
             `;
+
+            if (date.getDay() == 1) {
+                dayCard.innerHTML += `
+                    <div class="week-buttons">
+                        <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, this)" title="Gleichen Dienst für Mo-Fr eintragen">Woche füllen</button>
+                    </div>
+                `;
+            } else {
+                dayCard.innerHTML += `
+                    <div class="week-buttons"> <button class="fill-week-btn" style="visibility:hidden">placeholder</button></div>
+                `;
+            }
             
             return dayCard;
         }
@@ -635,10 +553,9 @@
             });
             
             if (!selectedService) {
-                alert('Bitte wählen Sie zuerst einen Dienst für einen Tag in dieser Woche aus.');
                 return;
             }
-            
+
             // Nur Montag bis Freitag (Index 1-5) mit dem gleichen Dienst füllen
             dayCards.forEach((card, index) => {
                 // Index 0 = Montag, Index 1 = Dienstag, ..., Index 4 = Freitag
@@ -733,6 +650,58 @@
         function formatDateTime(date) {
             return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         }
+		
+		        function fillMRT2Week(weekNumber, button) {
+            const weekContainer = document.getElementById(`week-${weekNumber}`);
+            const dayCards = weekContainer.querySelectorAll('.day-card');
+            
+            // Prüfen ob MRT2-Dienste existieren
+            if (!SERVICES['mrt2_frueh'] || !SERVICES['mrt2_spaet']) {
+                alert('MRT2-Dienste (mrt2_frueh und mrt2_spaet) sind in der dienste.csv nicht definiert.');
+                return;
+            }
+            
+            // Finde den ersten MRT2-Dienst in dieser Woche um zu bestimmen, womit gestartet werden soll
+            let startWithFrueh = true; // Standard: mit Früh starten
+            
+            dayCards.forEach((card, index) => {
+                if (index >= 0 && index <= 4) { // Nur Mo-Fr
+                    const select = card.querySelector('.day-select');
+                    if (select && (select.value === 'mrt2_frueh' || select.value === 'mrt2_spaet')) {
+                        // Wenn bereits ein MRT2-Dienst ausgewählt ist, bestimme das Muster
+                        if (select.value === 'mrt2_spaet') {
+                            // Wenn wir bei einem Spätdienst sind, schauen wir ob es Montag ist
+                            startWithFrueh = (index % 2 === 0); // Gerade Tage (Mo, Mi, Fr) = Früh bei Start mit Früh
+                        } else {
+                            startWithFrueh = (index % 2 !== 0); // Ungerade Tage (Di, Do) = Spät bei Start mit Früh
+                        }
+                    }
+                }
+            });
+            
+            // Wechselschicht Mo-Fr eintragen
+            dayCards.forEach((card, index) => {
+                if (index >= 0 && index <= 4) { // Montag bis Freitag
+                    const select = card.querySelector('.day-select');
+                    if (select) {
+                        let serviceKey;
+                        if (startWithFrueh) {
+                            // Start mit Früh: Mo=Früh, Di=Spät, Mi=Früh, Do=Spät, Fr=Früh
+                            serviceKey = (index % 2 === 0) ? 'mrt2_frueh' : 'mrt2_spaet';
+                        } else {
+                            // Start mit Spät: Mo=Spät, Di=Früh, Mi=Spät, Do=Früh, Fr=Spät
+                            serviceKey = (index % 2 === 0) ? 'mrt2_spaet' : 'mrt2_frueh';
+                        }
+                        
+                        select.value = serviceKey;
+                        
+                        // Schedule aktualisieren
+                        const dateKey = select.onchange.toString().match(/'([^']+)'/)[1];
+                        currentSchedule[dateKey] = serviceKey;
+                    }
+                }
+            });
+		}
 
         // App initialisieren
         init();
