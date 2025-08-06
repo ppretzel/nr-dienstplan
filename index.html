@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dienstplan zu ICS Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        select, input, button {
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .week-container {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #e1e8ed;
+            overflow: hidden;
+        }
+        
+        .week-header {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .week-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+        
+        .day-card {
+            border-right: 1px solid #e1e8ed;
+            padding: 10px;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+        
+        .day-card:last-child {
+            border-right: none;
+        }
+        
+        .day-card.other-month {
+            background: #f0f0f0;
+            opacity: 0.5;
+        }
+        
+        .day-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .day-date {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+        
+        .day-name {
+            color: #6c757d;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .day-select {
+            width: 100%;
+            padding: 4px;
+            font-size: 0.8rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .day-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        
+        .fill-week-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .day-card:hover .fill-week-btn {
+            opacity: 1;
+        }
+        
+        .fill-week-btn:hover {
+            background: #218838;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .config-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .service-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
+        
+        .service-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+        
+        .service-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .service-time {
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .week-days {
+                grid-template-columns: 1fr;
+            }
+            
+            .day-card {
+                border-right: none;
+                border-bottom: 1px solid #e1e8ed;
+            }
+            
+            .day-card:last-child {
+                border-bottom: none;
+            }
+            
+            .day-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Dienstplan Generator</h1>
+            <p>Erstellen Sie aus Ihrem Dienstplan automatisch eine ICS-Kalenderdatei</p>
+        </div>
+        
+        <div class="content">
+
+            
+            <div class="controls">
+                <div class="form-group">
+                    <label for="monthSelect">Monat auswählen:</label>
+                    <select id="monthSelect">
+                        <option value="">-- Monat wählen --</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="yearSelect">Jahr:</label>
+                    <select id="yearSelect"></select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nameInput">Ihr Name (für Kalendereinträge):</label>
+                    <input type="text" id="nameInput" placeholder="Max Mustermann" value="Dienstplan">
+                </div>
+                
+
+            </div>
+            
+            <div id="calendarContainer"></div>
+            
+            <button onclick="generateICS()" class="generate-btn" id="generateBtn" style="display: none;">
+                📥 ICS-Datei herunterladen
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Dienst-Konfiguration - hier können Sie Ihre eigenen Dienste definieren
+        const SERVICES = {
+            'frei': { name: 'Frei', startTime: null, endTime: null, color: '#28a745' },
+            'frueh': { name: 'Frühdienst', startTime: '06:00', endTime: '14:00', color: '#ffc107' },
+            'spaet': { name: 'Spätdienst', startTime: '14:00', endTime: '22:00', color: '#fd7e14' },
+            'nacht': { name: 'Nachtdienst', startTime: '22:00', endTime: '06:00', color: '#6f42c1' },
+            'tag': { name: 'Tagdienst', startTime: '08:00', endTime: '16:00', color: '#007bff' },
+            'bereit': { name: 'Bereitschaftsdienst', startTime: '08:00', endTime: '08:00', color: '#dc3545' }
+        };
+
+        const MONTHS = [
+            'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+            'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+        ];
+
+        const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+        let currentSchedule = {};
+
+        // Initialisierung
+        function init() {
+            populateMonthSelect();
+            populateYearSelect();
+            // Kalender automatisch für aktuellen Monat anzeigen
+            generateCalendar();
+        }
+
+
+
+        function populateMonthSelect() {
+            const select = document.getElementById('monthSelect');
+            select.innerHTML = '<option value="">-- Monat wählen --</option>';
+            
+            MONTHS.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = month;
+                select.appendChild(option);
+            });
+            
+            // Event Listener hinzufügen
+            select.addEventListener('change', generateCalendar);
+            
+            // Aktueller Monat vorauswählen
+            const currentMonth = new Date().getMonth();
+            select.value = currentMonth;
+        }
+
+        function populateYearSelect() {
+            const select = document.getElementById('yearSelect');
+            const currentYear = new Date().getFullYear();
+            
+            for (let year = currentYear - 1; year <= currentYear + 2; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) option.selected = true;
+                select.appendChild(option);
+            }
+            
+            // Event Listener hinzufügen
+            select.addEventListener('change', generateCalendar);
+        }
+
+        function generateCalendar() {
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+            
+            if (!monthSelect.value) {
+                document.getElementById('calendarContainer').innerHTML = '';
+                document.getElementById('generateBtn').style.display = 'none';
+                return;
+            }
+            
+            const month = parseInt(monthSelect.value);
+            const year = parseInt(yearSelect.value);
+            
+            const container = document.getElementById('calendarContainer');
+            container.innerHTML = '';
+            
+            // Erste und letzte Woche komplett anzeigen
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            
+            // Start der ersten Woche (Montag)
+            const startDate = new Date(firstDay);
+            const dayOfWeek = firstDay.getDay();
+            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            startDate.setDate(firstDay.getDate() + mondayOffset);
+            
+            // Ende der letzten Woche (Sonntag)
+            const endDate = new Date(lastDay);
+            const lastDayOfWeek = lastDay.getDay();
+            const sundayOffset = lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek;
+            endDate.setDate(lastDay.getDate() + sundayOffset);
+            
+            let currentWeekStart = new Date(startDate);
+            let weekNumber = 1;
+            
+            while (currentWeekStart <= endDate) {
+                const weekContainer = createWeekContainer(currentWeekStart, month, year, weekNumber);
+                container.appendChild(weekContainer);
+                
+                currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+                weekNumber++;
+            }
+            
+            document.getElementById('generateBtn').style.display = 'block';
+        }
+
+        function createWeekContainer(weekStart, targetMonth, targetYear, weekNumber) {
+            const weekContainer = document.createElement('div');
+            weekContainer.className = 'week-container';
+            
+            // Woche-Header mit Datum-Range
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            const headerText = `KW ${getWeekNumber(weekStart)} (${weekStart.getDate()}.${weekStart.getMonth() + 1}. - ${weekEnd.getDate()}.${weekEnd.getMonth() + 1}.${weekEnd.getFullYear()})`;
+            
+            weekContainer.innerHTML = `
+                <div class="week-header">${headerText}</div>
+                <div class="week-days" id="week-${weekNumber}"></div>
+            `;
+            
+            const weekDaysContainer = weekContainer.querySelector('.week-days');
+            
+            for (let i = 0; i < 7; i++) {
+                const currentDate = new Date(weekStart);
+                currentDate.setDate(weekStart.getDate() + i);
+                
+                const dayCard = createDayCard(currentDate, targetMonth, targetYear, weekNumber);
+                weekDaysContainer.appendChild(dayCard);
+            }
+            
+            return weekContainer;
+        }
+
+        function createDayCard(date, targetMonth, targetYear, weekNumber) {
+            const isCurrentMonth = date.getMonth() === targetMonth && date.getFullYear() === targetYear;
+            const weekday = WEEKDAYS[date.getDay()];
+            const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            
+            const dayCard = document.createElement('div');
+            dayCard.className = `day-card ${!isCurrentMonth ? 'other-month' : ''}`;
+            
+            dayCard.innerHTML = `
+                <div class="day-header">
+                    <div class="day-date">${date.getDate()}</div>
+                    <div class="day-name">${weekday}</div>
+                </div>
+                ${isCurrentMonth ? `
+                    <select class="day-select" onchange="updateSchedule('${dateKey}', this.value, ${weekNumber})">
+                        <option value="">-- Dienst --</option>
+                        ${Object.entries(SERVICES).map(([key, service]) => 
+                            `<option value="${key}">${service.name}</option>`
+                        ).join('')}
+                    </select>
+                    <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, this)" title="Gleichen Dienst für Mo-Fr eintragen">Mo-Fr füllen</button>
+                ` : ''}
+            `;
+            
+            return dayCard;
+        }
+
+        function getWeekNumber(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        function updateSchedule(dateKey, serviceKey, weekNumber) {
+            if (serviceKey) {
+                currentSchedule[dateKey] = serviceKey;
+            } else {
+                delete currentSchedule[dateKey];
+            }
+        }
+
+        function fillWeek(weekNumber, button) {
+            const weekContainer = document.getElementById(`week-${weekNumber}`);
+            const dayCards = weekContainer.querySelectorAll('.day-card:not(.other-month)');
+            
+            // Finde den ausgewählten Dienst in dieser Woche
+            let selectedService = '';
+            dayCards.forEach(card => {
+                const select = card.querySelector('.day-select');
+                if (select && select.value) {
+                    selectedService = select.value;
+                }
+            });
+            
+            if (!selectedService) {
+                alert('Bitte wählen Sie zuerst einen Dienst für einen Tag in dieser Woche aus.');
+                return;
+            }
+            
+            // Nur Montag bis Freitag (Index 1-5) mit dem gleichen Dienst füllen
+            dayCards.forEach((card, index) => {
+                // Index 0 = Montag, Index 1 = Dienstag, ..., Index 4 = Freitag
+                // Index 5 = Samstag, Index 6 = Sonntag (diese überspringen)
+                if (index >= 0 && index <= 4) { // Montag bis Freitag
+                    const select = card.querySelector('.day-select');
+                    if (select) {
+                        select.value = selectedService;
+                        
+                        // Schedule aktualisieren
+                        const dateKey = select.onchange.toString().match(/'([^']+)'/)[1];
+                        currentSchedule[dateKey] = selectedService;
+                    }
+                }
+            });
+        }
+
+        function generateICS() {
+            const name = document.getElementById('nameInput').value || 'Dienstplan';
+            const entries = Object.entries(currentSchedule).filter(([date, service]) => service && SERVICES[service].startTime);
+            
+            if (entries.length === 0) {
+                alert('Bitte wählen Sie mindestens einen Dienst aus.');
+                return;
+            }
+            
+            let icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Dienstplan Generator//DE',
+                'CALSCALE:GREGORIAN',
+                'METHOD:PUBLISH'
+            ];
+            
+            entries.forEach(([dateStr, serviceKey]) => {
+                const service = SERVICES[serviceKey];
+                const [year, month, day] = dateStr.split('-').map(Number);
+                
+                // Start-Datum und -Zeit
+                let startDate = new Date(year, month - 1, day);
+                let endDate = new Date(year, month - 1, day);
+                
+                const [startHour, startMin] = service.startTime.split(':').map(Number);
+                const [endHour, endMin] = service.endTime.split(':').map(Number);
+                
+                startDate.setHours(startHour, startMin, 0);
+                endDate.setHours(endHour, endMin, 0);
+                
+                // Wenn Endzeit kleiner als Startzeit, dann nächster Tag
+                if (endHour < startHour || (endHour === startHour && endMin < startMin)) {
+                    endDate.setDate(endDate.getDate() + 1);
+                }
+                
+                const uid = `${dateStr}-${serviceKey}@dienstplan-generator.local`;
+                const dtstart = formatDateTime(startDate);
+                const dtend = formatDateTime(endDate);
+                const created = formatDateTime(new Date());
+                
+                icsContent.push(
+                    'BEGIN:VEVENT',
+                    `UID:${uid}`,
+                    `DTSTART:${dtstart}`,
+                    `DTEND:${dtend}`,
+                    `DTSTAMP:${created}`,
+                    `CREATED:${created}`,
+                    `SUMMARY:${service.name} - ${name}`,
+                    `DESCRIPTION:${service.name} (${service.startTime} - ${service.endTime})`,
+                    'STATUS:CONFIRMED',
+                    'TRANSP:OPAQUE',
+                    'END:VEVENT'
+                );
+            });
+            
+            icsContent.push('END:VCALENDAR');
+            
+            // Download der ICS-Datei
+            const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            const monthName = MONTHS[parseInt(document.getElementById('monthSelect').value)];
+            const year = document.getElementById('yearSelect').value;
+            
+            a.href = url;
+            a.download = `Dienstplan_${monthName}_${year}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function formatDateTime(date) {
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        }
+
+        // App initialisieren
+        init();
+    </script>
+</body>
+</html>
