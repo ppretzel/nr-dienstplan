@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dienstplan zu ICS Generator</title>
+    <title>📅 Neuroradio-Dienstplan</title>
     <style>
         * {
             margin: 0;
@@ -179,7 +179,7 @@
             color: white;
             border: none;
             padding: 1px 3px;
-            font-size: 0.55rem;
+            font-size: 0.75rem;
             border-radius: 2px;
             cursor: pointer;
             opacity: 0;
@@ -334,13 +334,17 @@
     <script>
         // Dienst-Konfiguration für Neuroradiologie
         const SERVICES = {
-            'mrt1_frueh': { name: 'MRT1 Früh', startTime: '06:00', endTime: '14:00', color: '#ffc107' },
-            'mrt1_spaet': { name: 'MRT1 Spät', startTime: '14:00', endTime: '22:00', color: '#fd7e14' },
-            'mrt2_frueh': { name: 'MRT2 Früh', startTime: '06:00', endTime: '14:00', color: '#17a2b8' },
-            'mrt2_spaet': { name: 'MRT2 Spät', startTime: '14:00', endTime: '22:00', color: '#138496' },
-            'ct_frueh': { name: 'CT Früh', startTime: '06:00', endTime: '14:00', color: '#6f42c1' },
-            'ct_spaet': { name: 'CT Spät', startTime: '14:00', endTime: '22:00', color: '#5a359a' },
-            'intervention': { name: 'Intervention', startTime: '08:00', endTime: '16:00', color: '#dc3545' }
+            'mrt1_frueh': { name: 'MRT1 Früh', startTime: '07:55', endTime: '16:55', color: '#ffc107' },
+            'mrt1_spaet': { name: 'MRT1 Spät', startTime: '12:00', endTime: '21:00', color: '#fd7e14' },
+            'mrt2_frueh': { name: 'MRT2 Früh', startTime: '07:55', endTime: '16:55', color: '#17a2b8' },
+            'mrt2_spaet': { name: 'MRT2 Spät', startTime: '12:00', endTime: '21:00', color: '#138496' },
+            'c1_frueh': { name: 'CT1 Früh', startTime: '07:55', endTime: '16:55', color: '#ffc107' },
+            'ct1_spaet': { name: 'CT1 Spät', startTime: '12:00', endTime: '21:00', color: '#fd7e14' },
+            'intervention': { name: 'Intervention', startTime: '07:55', endTime: '16:55', color: '#dc3545' },
+            'we_lang': { name: 'Dienst lang', startTime: '08:00', endTime: '20:45', color: '#dc3545' },
+            'we_kurz': { name: 'Dienst kurz', startTime: '10:00', endTime: '16:00', color: '#dc3545' },
+            'n1': { name: 'N1', startTime: '20:15', endTime: '08:15', color: '#dc3545' },
+            'n2': { name: 'N2', startTime: '20:15', endTime: '08:15', color: '#dc3545' }
         };
 
         let servicesLoaded = true; // Services sind jetzt direkt verfügbar
@@ -500,10 +504,30 @@
                 </select>
             `;
 
-            if (date.getDay() == 1) {
+            // Unterschiedliche Beschriftungen für die einzelnen Wochentage
+            let daycardCaption;
+            switch (date.getDay()) {
+                case 1:
+                    daycardCaption = "Auf Di-Fr kopieren";
+                    break;
+                            case 2:
+                            daycardCaption = "Auf Mi-Fr kopieren";
+                            break;
+                            case 3:
+                            daycardCaption = "Auf Do-Fr kopieren";
+                            break;
+                            case 4:
+                            daycardCaption = "Auf Fr kopieren";
+                            break;
+                            default:
+                            daycardCaption = "default";
+                            break;
+                    }
+            // Button nur Mo-Do anzeigen, für Fr-So unsichtbar machen damit der whitespace trotzdem gleich bleibt
+            if (date.getDay() >= 1 && date.getDay() <= 4) {
                 dayCard.innerHTML += `
                     <div class="week-buttons">
-                        <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, this)" title="Gleichen Dienst für Mo-Fr eintragen">Woche füllen</button>
+                            <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, this)" title="Gleichen Dienst für Mo-Fr eintragen">${daycardCaption}</button>
                     </div>
                 `;
             } else {
