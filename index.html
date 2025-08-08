@@ -563,9 +563,13 @@
             const weekContainer = document.getElementById(`week-${weekNumber}`);
             const dayCards = weekContainer.querySelectorAll('.day-card');
             const weekContainerPrev = document.getElementById(`week-${weekNumber-1}`);
-            const dayCardsPrev = weekContainerPrev.querySelectorAll('.day-card');
+            if (weekContainerPrev) {
+                const dayCardsPrev = weekContainerPrev.querySelectorAll('.day-card');
+            }
             const weekContainerNext = document.getElementById(`week-${weekNumber+1}`);
-            const dayCardsNext = weekContainerNext.querySelectorAll('.day-card');
+            if (weekContainerNext) {
+                const dayCardsNext = weekContainerNext.querySelectorAll('.day-card');
+            }
             
             // Finde den ausgewählten Dienst in dieser Woche
             let selectedService = '';
