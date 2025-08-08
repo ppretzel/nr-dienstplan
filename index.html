@@ -582,9 +582,6 @@
             }
 
             const nightshifts = new Set(["n1", "n2"])
-            if (nightshifts.has(selectedService)) {
-                        alert("night!");
-                    }
             // Nur Montag bis Freitag (Index 1-5) mit dem gleichen Dienst füllen
             dayCards.forEach((card, index) => {
                 // Index 0 = Montag, Index 1 = Dienstag, ..., Index 4 = Freitag
@@ -619,15 +616,17 @@
                 'METHOD:PUBLISH'
             ];
             
+            entries.forEach(([dateStr, serviceKey]) => {
                 const service = SERVICES[serviceKey];
                 const [year, month, day] = dateStr.split('-').map(Number);
                 
                 // Start-Datum und -Zeit
                 let startDate = new Date(year, month - 1, day);
+                let endDate = ''
                 if (nightshifts.has(service)) {
-                    let endDate = new Date(year, month - 1, day + 1);
+                    endDate = new Date(year, month - 1, day+1);
                 } else {
-                    let endDate = new Date(year, month - 1, day);
+                    endDate = new Date(year, month - 1, day);
                 }
                 
                 const [startHour, startMin] = service.startTime.split(':').map(Number);
@@ -687,11 +686,6 @@
             const weekContainer = document.getElementById(`week-${weekNumber}`);
             const dayCards = weekContainer.querySelectorAll('.day-card');
             
-            // Prüfen ob MRT2-Dienste existieren
-            if (!SERVICES['mrt2_frueh'] || !SERVICES['mrt2_spaet']) {
-                alert('MRT2-Dienste (mrt2_frueh und mrt2_spaet) sind in der dienste.csv nicht definiert.');
-                return;
-            }
             
             // Finde den ersten MRT2-Dienst in dieser Woche um zu bestimmen, womit gestartet werden soll
             let startWithFrueh = true; // Standard: mit Früh starten
