@@ -562,7 +562,6 @@
             // Finde den ausgewählten Dienst in dieser Woche
             let selectedService = '';
             selectedService = dayCards[weekday-1].querySelector('.day-select').value;
-                    alert(selectedService);
             
             if (!selectedService) {
                 return;
@@ -572,7 +571,7 @@
             dayCards.forEach((card, index) => {
                 // Index 0 = Montag, Index 1 = Dienstag, ..., Index 4 = Freitag
                 // Index 5 = Samstag, Index 6 = Sonntag (diese überspringen)
-                if (index >= 0 && index <= 4) { // Montag bis Freitag
+                if (index >= weekday && index <= 4) { // Montag bis Freitag
                     const select = card.querySelector('.day-select');
                     if (select) {
                         select.value = selectedService;
