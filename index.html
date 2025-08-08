@@ -338,13 +338,17 @@
             'mrt1_spaet': { name: 'MRT1 Spät', startTime: '12:00', endTime: '21:00', color: '#fd7e14' },
             'mrt2_frueh': { name: 'MRT2 Früh', startTime: '07:55', endTime: '16:55', color: '#17a2b8' },
             'mrt2_spaet': { name: 'MRT2 Spät', startTime: '12:00', endTime: '21:00', color: '#138496' },
+            'mrt3_kh': { name: 'MRT3 KH', startTime: '07:55', endTime: '16:55', color: '#17a2b8' },
             'c1_frueh': { name: 'CT1 Früh', startTime: '07:55', endTime: '16:55', color: '#ffc107' },
             'ct1_spaet': { name: 'CT1 Spät', startTime: '12:00', endTime: '21:00', color: '#fd7e14' },
             'intervention': { name: 'Intervention', startTime: '07:55', endTime: '16:55', color: '#dc3545' },
+            'spaetraum': { name: 'Spätraum', startTime: '12:00', endTime: '21:00', color: '#fd7e14' },
+            'kbo1': { name: 'KBO 1', startTime: '07:55', endTime: '16:30', color: '#17a2b8' },
             'we_lang': { name: 'Dienst lang', startTime: '08:00', endTime: '20:45', color: '#dc3545' },
             'we_kurz': { name: 'Dienst kurz', startTime: '10:00', endTime: '16:00', color: '#dc3545' },
             'n1': { name: 'N1', startTime: '20:15', endTime: '08:15', color: '#dc3545' },
-            'n2': { name: 'N2', startTime: '20:15', endTime: '08:15', color: '#dc3545' }
+            'n2': { name: 'N2', startTime: '20:15', endTime: '08:15', color: '#dc3545' },
+            'forschung': { name: 'Forschung', startTime: '07:55', endTime: '17:00', color: '#17a2b8' }
         };
 
         let servicesLoaded = true; // Services sind jetzt direkt verfügbar
@@ -558,6 +562,10 @@
         function fillWeek(weekNumber, weekday, button) {
             const weekContainer = document.getElementById(`week-${weekNumber}`);
             const dayCards = weekContainer.querySelectorAll('.day-card');
+            const weekContainerPrev = document.getElementById(`week-${weekNumber-1}`);
+            const dayCardsPrev = weekContainerPrev.querySelectorAll('.day-card');
+            const weekContainerNext = document.getElementById(`week-${weekNumber+1}`);
+            const dayCardsNext = weekContainerNext.querySelectorAll('.day-card');
             
             // Finde den ausgewählten Dienst in dieser Woche
             let selectedService = '';
