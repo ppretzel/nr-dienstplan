@@ -351,6 +351,8 @@
             'forschung': { name: 'Forschung', startTime: '07:55', endTime: '17:00', color: '#17a2b8' }
         };
 
+        const nightshifts = new Set(['n1', 'n2']);
+
         let servicesLoaded = true; // Services sind jetzt direkt verfügbar
 
         const MONTHS = [
@@ -579,6 +581,10 @@
                 return;
             }
 
+            const nightshifts = new Set(["n1", "n2"])
+            if (nightshifts.has(selectedService)) {
+                        alert("night!");
+                    }
             // Nur Montag bis Freitag (Index 1-5) mit dem gleichen Dienst füllen
             dayCards.forEach((card, index) => {
                 // Index 0 = Montag, Index 1 = Dienstag, ..., Index 4 = Freitag
@@ -613,13 +619,16 @@
                 'METHOD:PUBLISH'
             ];
             
-            entries.forEach(([dateStr, serviceKey]) => {
                 const service = SERVICES[serviceKey];
                 const [year, month, day] = dateStr.split('-').map(Number);
                 
                 // Start-Datum und -Zeit
                 let startDate = new Date(year, month - 1, day);
-                let endDate = new Date(year, month - 1, day);
+                if (nightshifts.has(service)) {
+                    let endDate = new Date(year, month - 1, day + 1);
+                } else {
+                    let endDate = new Date(year, month - 1, day);
+                }
                 
                 const [startHour, startMin] = service.startTime.split(':').map(Number);
                 const [endHour, endMin] = service.endTime.split(':').map(Number);
