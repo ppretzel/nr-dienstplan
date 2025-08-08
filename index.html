@@ -527,7 +527,7 @@
             if (date.getDay() >= 1 && date.getDay() <= 4) {
                 dayCard.innerHTML += `
                     <div class="week-buttons">
-                            <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, this)" title="Gleichen Dienst für Mo-Fr eintragen">${daycardCaption}</button>
+                            <button class="fill-week-btn" onclick="fillWeek(${weekNumber}, ${date.getDay()}, this)" title="Gleichen Dienst eintragen">${daycardCaption}</button>
                     </div>
                 `;
             } else {
@@ -555,18 +555,14 @@
             }
         }
 
-        function fillWeek(weekNumber, button) {
+        function fillWeek(weekNumber, weekday, button) {
             const weekContainer = document.getElementById(`week-${weekNumber}`);
             const dayCards = weekContainer.querySelectorAll('.day-card');
             
             // Finde den ausgewählten Dienst in dieser Woche
             let selectedService = '';
-            dayCards.forEach(card => {
-                const select = card.querySelector('.day-select');
-                if (select && select.value) {
-                    selectedService = select.value;
-                }
-            });
+            selectedService = dayCards[weekday-1].querySelector('.day-select').value;
+                    alert(selectedService);
             
             if (!selectedService) {
                 return;
